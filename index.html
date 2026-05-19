@@ -118,6 +118,9 @@
   .pct-editor input[type=range] { flex: 1; accent-color: var(--accent); cursor: pointer; }
   .pct-editor .pct-val { font-size: 13px; font-weight: 600; color: var(--text); min-width: 36px; text-align: right; }
 
+  .mention { background: #fef3c7; color: #92400e; border-radius: 4px; padding: 1px 5px; font-weight: 600; font-size: 12px; }
+  .mention.me { background: #E2445C; color: #fff; }
+  #notifBtn.active { color: #00C875; border-color: #00C875; }
   @media (max-width: 600px) {
     .content { padding: 0.75rem; }
     .topbar { padding: 0 0.75rem; }
@@ -143,6 +146,16 @@
 
 <div class="topbar">
   <div class="logo"><div class="logo-dot"></div> Suivi Projets</div>
+  <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+    <label style="font-size:12px;color:var(--text3)">Je suis :</label>
+    <select id="myIdentity" onchange="setIdentity(this.value)" style="font-size:12px;padding:4px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;outline:none">
+      <option value="">— choisir —</option>
+      <option>Kim</option><option>Nathan</option><option>Théo</option><option>Mael</option><option>Marwen</option><option>Admin</option>
+    </select>
+    <button id="notifBtn" onclick="requestNotifPermission()" title="Activer les notifications" style="display:none;width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);cursor:pointer;color:var(--text2);display:flex;align-items:center;justify-content:center">
+      <i class="ti ti-bell" style="font-size:16px"></i>
+    </button>
+  </div>
   <div class="sync-badge">
     <div class="sync-dot" id="syncDot"></div>
     <span id="syncLabel">Connexion…</span>
@@ -301,6 +314,66 @@ const INITIAL_DATA = {
 
 let currentPid = 'kim';
 let modalPid = null;
+let myName = localStorage.getItem('myName') || '';
+let knownMsgKeys = new Set();
+let appReady = false;
+
+// ── Identity & notifications ───────────────────────────────────────────────
+window.setIdentity = (name) => {
+  myName = name;
+  localStorage.setItem('myName', name);
+  updateNotifBtn();
+};
+
+function updateNotifBtn() {
+  const btn = document.getElementById('notifBtn');
+  if (!myName) { btn.style.display = 'none'; return; }
+  btn.style.display = 'flex';
+  if (Notification.permission === 'granted') {
+    btn.classList.add('active');
+    btn.title = 'Notifications activées';
+  } else {
+    btn.classList.remove('active');
+    btn.title = 'Cliquer pour activer les notifications';
+  }
+}
+
+window.requestNotifPermission = async () => {
+  const perm = await Notification.requestPermission();
+  updateNotifBtn();
+  if (perm === 'granted') showToast('Notifications activées !');
+};
+
+function maybeNotify(projName, msg) {
+  if (!myName || !appReady) return;
+  const mentioned = msg.text && msg.text.toLowerCase().includes('@' + myName.toLowerCase());
+  if (!mentioned) return;
+  if (msg.author === myName) return;
+  if (Notification.permission === 'granted') {
+    const n = new Notification(`@${myName} mentionné dans ${projName}`, {
+      body: `${msg.author} : ${msg.text}`,
+      icon: 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+      tag: projName,
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+  }
+  showToast(`@${myName} mentionné par ${msg.author}`);
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#1A1A1A;color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;z-index:999;transition:opacity 0.3s;pointer-events:none';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.opacity = '0', 3000);
+}
 
 // ── Seed data ──────────────────────────────────────────────────────────────
 async function seedIfEmpty() {
@@ -417,7 +490,7 @@ function renderPersonView(pid, projects) {
           <div class="input-zone">
             <textarea id="input-${proj._key}" placeholder="Écrire un message… (Entrée pour envoyer)"
               onkeydown="handleKey(event,'${pid}','${proj._key}')"
-              oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+              oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'" placeholder="Écrire un message… Utilisez @Kim, @Nathan… pour mentionner"></textarea>
             <button class="send-btn" onclick="sendMsg('${pid}','${proj._key}')" title="Envoyer">
               <i class="ti ti-send"></i>
             </button>
@@ -441,25 +514,36 @@ function renderPersonView(pid, projects) {
     if (card) card.classList.add('open');
   });
 
-  projects.forEach(proj => listenMessages(proj._key));
+  projects.forEach(proj => listenMessages(proj._key, proj.name));
 }
 
 // ── Listen to messages ─────────────────────────────────────────────────────
 const listenedKeys = new Set();
-function listenMessages(projKey) {
+const projNameMap = {};
+
+function listenMessages(projKey, projName) {
+  projNameMap[projKey] = projName;
   if (listenedKeys.has(projKey)) return;
   listenedKeys.add(projKey);
+  let firstLoad = true;
   onValue(ref(db, `messages/${projKey}`), snap => {
     const msgs = [];
-    snap.forEach(child => msgs.push(child.val()));
+    snap.forEach(child => {
+      const key = child.key;
+      const val = { _key: key, ...child.val() };
+      msgs.push(val);
+      if (!firstLoad && !knownMsgKeys.has(key)) {
+        maybeNotify(projNameMap[projKey] || projKey, val);
+      }
+      knownMsgKeys.add(key);
+    });
+    firstLoad = false;
     const thread = document.getElementById(`thread-${projKey}`);
     const countEl = document.getElementById(`msgcount-${projKey}`);
     if (thread) {
-      if (msgs.length === 0) {
-        thread.innerHTML = `<div class="empty-thread">Aucun message — soyez le premier !</div>`;
-      } else {
-        thread.innerHTML = msgs.map(m => renderMsg(m)).join('');
-      }
+      thread.innerHTML = msgs.length === 0
+        ? `<div class="empty-thread">Aucun message — soyez le premier !</div>`
+        : msgs.map(m => renderMsg(m)).join('');
     }
     if (countEl) countEl.innerHTML = `<i class="ti ti-message-circle" style="font-size:14px"></i>${msgs.length}`;
   });
@@ -468,11 +552,15 @@ function listenMessages(projKey) {
 function renderMsg(m) {
   const color = AUTHOR_COLORS[m.author] || '#888';
   const initials = (m.author||'?').substring(0,2).toUpperCase();
+  const text = (m.text||'').replace(/@(\w+)/g, (match, name) => {
+    const isSelf = myName && name.toLowerCase() === myName.toLowerCase();
+    return `<span class="mention${isSelf?' me':''}">${match}</span>`;
+  });
   return `<div class="msg">
     <div class="msg-avatar" style="background:${color}">${initials}</div>
     <div class="msg-body">
       <div class="msg-meta"><span class="msg-author">${m.author}</span><span class="msg-time">${m.time}</span></div>
-      <div class="msg-bubble">${m.text}</div>
+      <div class="msg-bubble">${text}</div>
     </div>
   </div>`;
 }
@@ -559,6 +647,13 @@ document.head.appendChild(style);
 buildShell();
 await seedIfEmpty();
 PEOPLE.forEach(p => listenPerson(p.id));
+
+if (myName) {
+  const sel = document.getElementById('myIdentity');
+  sel.value = myName;
+  updateNotifBtn();
+}
+setTimeout(() => { appReady = true; }, 2000);
 </script>
 </body>
 </html>
