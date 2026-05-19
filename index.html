@@ -318,15 +318,21 @@ async function seedData(){
     const n2k={};
     ms.forEach(c=>{n2k[c.val().name.toLowerCase()]=c.key;});
     const seeds=[
-      {pid:'kim',    name:'Vilac - Seller - Création Variation produit',          status:'Pas commencé',date:'mai 6',   pct:0,  msgs:[{a:'Kim',t:'06/05 9h14',m:'Besoin de confirmation sur les SKUs.'},{a:'Admin',t:'06/05 11h02',m:'SKUs confirmés !'}]},
-      {pid:'kim',    name:'CANAL TOYS UK - 5 Variations upload template',          status:'Pas commencé',date:'mai 6',   pct:0,  msgs:[]},
-      {pid:'kim',    name:'CANAL TOYS DE - litiges à lancer',                      status:'Pas commencé',date:'mai 6',   pct:0,  msgs:[]},
-      {pid:'kim',    name:'LISCIANI DE - FR - UK - Variations selon fichier',      status:'En cours',    date:'mai 8',   pct:30, msgs:[{a:'Kim',t:'08/05 10h00',m:'47 variations reçues.'},{a:'Admin',t:'08/05 16h20',m:'Priorité UK.'},{a:'Kim',t:'08/05 16h45',m:'Ok, UK en premier.'}]},
-      {pid:'nathan', name:'Jeujura - Création produits + visuels',                 status:'En cours',    date:'mai 4',   pct:40, msgs:[{a:'Nathan',t:'04/05 9h00',m:'Visuels pas aux bonnes dimensions.'},{a:'Admin',t:'04/05 11h30',m:'Relance envoyée.'}]},
-      {pid:'nathan', name:'MEGABLEU FR / NL - Page A+ & MAJ store',                status:'En cours',    date:'mai 4',   pct:60, msgs:[{a:'Nathan',t:'04/05 17h00',m:'Page A+ FR créée.'}]},
-      {pid:'nathan', name:'LANSAY FR - MAJ store avec nouveautés PE26',            status:'En cours',    date:'mai 6',   pct:50, msgs:[]},
-      {pid:'nathan', name:'LISCIANI FR - DE - ES : Vérification & Optimisation',  status:'En cours',    date:'févr. 20',pct:20, msgs:[{a:'Nathan',t:'20/02 11h00',m:'Audit terminé, 32 fiches.'}]},
-      {pid:'théo',   name:'Clementoni / Création matrice + Optimisations',        status:'Fait',        date:'mai 1',   pct:100,msgs:[{a:'Théo',t:'01/05 18h00',m:'Terminé !'},{a:'Admin',t:'01/05 18h30',m:'Validé !'}]},
+      {pid:'kim',    name:'Vilac - Seller - Création Variation produit',           status:'Pas commencé',date:'mai 12',  pct:0,   priority:'haute',   timeVal:'3',timeUnit:'heures', msgs:[{a:'Kim',t:'06/05 9h14',m:"Besoin de confirmation sur les SKUs avant de démarrer."},{a:'Admin',t:'06/05 11h02',m:"SKUs confirmés, tu peux y aller !"}]},
+      {pid:'kim',    name:'CANAL TOYS UK - 5 Variations upload template',          status:'En cours',    date:'mai 15',  pct:35,  priority:'normale',  timeVal:'2',timeUnit:'heures', msgs:[{a:'Kim',t:'06/05 14h30',m:"Template prêt. Colonnes vérifiées ?"},{a:'Admin',t:'06/05 15h45',m:"Oui c'est bon, lance l'import."},{a:'Kim',t:'07/05 9h00',m:"Import en cours, 3 variations faites sur 5."}]},
+      {pid:'kim',    name:'CANAL TOYS DE - litiges à lancer',                      status:'Bloqué',      date:'mai 19',  pct:10,  priority:'haute',    timeVal:'4',timeUnit:'heures', msgs:[{a:'Admin',t:'08/05 10h00',m:"On attend retour juridique. @Kim peux-tu relancer le client ?"},{a:'Kim',t:'08/05 11h30',m:"Relance envoyée, délai estimé 48h."}]},
+      {pid:'nathan', name:'Jeujura - Création produits + visuels',                 status:'En cours',    date:'mai 20',  pct:40,  priority:'haute',    timeVal:'6',timeUnit:'heures', msgs:[{a:'Nathan',t:'04/05 9h00',m:"Visuels reçus mais pas aux bonnes dimensions. Besoin 2000x2000px."},{a:'Admin',t:'04/05 11h30',m:"Relance envoyée au client."},{a:'Nathan',t:'06/05 14h00',m:"Toujours pas de retour, je relance."}]},
+      {pid:'théo',   name:'Clementoni / Création matrice + Optimisations',         status:'Fait',        date:'mai 22',  pct:100, priority:'normale',  timeVal:'5',timeUnit:'heures', msgs:[{a:'Théo',t:'01/05 18h00',m:"Matrice finalisée, toutes les optimisations appliquées."},{a:'Admin',t:'01/05 18h30',m:"Parfait, validé !"},{a:'Théo',t:'02/05 9h00',m:"Super, projet clôturé."}]},
+      {pid:'mael',   name:'JANOD - Création fiches produits FR',                   status:'En cours',    date:'mai 24',  pct:55,  priority:'normale',  timeVal:'3',timeUnit:'heures', msgs:[{a:'Mael',t:'10/05 9h00',m:"15 fiches créées sur 28. Bon rythme."},{a:'Admin',t:'10/05 10h00',m:"Super @Mael, continue !"}]},
+      {pid:'nathan', name:'MEGABLEU FR / NL - Page A+ & MAJ store',                status:'En cours',    date:'mai 28',  pct:60,  priority:'normale',  timeVal:'4',timeUnit:'heures', msgs:[{a:'Nathan',t:'04/05 17h00',m:"Page A+ FR créée. Démarrage NL demain."},{a:'Nathan',t:'05/05 10h30',m:"NL en cours, quelques traductions à vérifier."}]},
+      {pid:'marwen', name:'RAVENSBURGER - Optimisation contenu DE',                status:'Pas commencé',date:'juin 3',  pct:0,   priority:'basse',    timeVal:'2',timeUnit:'jours',  msgs:[]},
+      {pid:'kim',    name:'LISCIANI DE - FR - UK - Variations selon fichier',      status:'En cours',    date:'juin 8',  pct:30,  priority:'normale',  timeVal:'1',timeUnit:'jours',  msgs:[{a:'Kim',t:'08/05 10h00',m:"47 variations reçues, je commence par DE."},{a:'Admin',t:'08/05 16h20',m:"Priorité UK selon client."},{a:'Kim',t:'08/05 16h45',m:"Ok, UK en premier dès demain."}]},
+      {pid:'nathan', name:'LANSAY FR - MAJ store avec nouveautés PE26',            status:'En cours',    date:'juin 10', pct:50,  priority:'normale',  timeVal:'3',timeUnit:'heures', msgs:[{a:'Nathan',t:'06/05 9h45',m:"Nouveautés PE26 intégrées pour FR. En attente des visuels."}]},
+      {pid:'mael',   name:'DJECO - Refonte page marque',                           status:'Pas commencé',date:'juin 15', pct:0,   priority:'haute',    timeVal:'2',timeUnit:'jours',  msgs:[{a:'Admin',t:'09/05 14h00',m:"Priorité haute, le client attend depuis 3 semaines. @Mael peux-tu démarrer ?"},{a:'Mael',t:'09/05 15h30',m:"Je démarre lundi."}]},
+      {pid:'théo',   name:'NATHAN JEUX - Création variations couleurs',            status:'En cours',    date:'juin 18', pct:20,  priority:'normale',  timeVal:'4',timeUnit:'heures', msgs:[{a:'Théo',t:'12/05 9h00',m:"12 variations à créer. Début fait pour rouge et bleu."}]},
+      {pid:'marwen', name:'HABA - Traduction fiches DE vers FR',                   status:'En cours',    date:'juin 22', pct:45,  priority:'normale',  timeVal:'5',timeUnit:'heures', msgs:[{a:'Marwen',t:'11/05 10h00',m:"23 fiches traduites sur 51."},{a:'Admin',t:'11/05 11h00',m:"Bon avancement @Marwen !"}]},
+      {pid:'nathan', name:'LISCIANI FR - DE - ES : Vérification & Optimisation',  status:'En cours',    date:'juil 5',  pct:20,  priority:'basse',    timeVal:'2',timeUnit:'jours',  msgs:[{a:'Nathan',t:'20/02 11h00',m:"Audit terminé, 32 fiches à optimiser."},{a:'Admin',t:'28/02 9h00',m:"Pas d'avancement depuis le 20/02 ?"},{a:'Nathan',t:'28/02 10h15',m:"Je reprends cette semaine."}]},
+      {pid:'mael',   name:'BRIO - Mise à jour catalogue été',                      status:'Pas commencé',date:'juil 14', pct:0,   priority:'basse',    timeVal:'3',timeUnit:'jours',  msgs:[]},
     ];
     for(const p of seeds){
       const pid=n2k[p.pid]||p.pid;
@@ -481,7 +487,37 @@ function renderProjects(){
   if(!projs.length){
     html+='<div class="empty-state"><i class="ti ti-inbox" style="font-size:36px;display:block;margin-bottom:12px;opacity:.35"></i>Aucun projet</div>';
   } else {
-    projs.forEach(proj=>{
+    // Sort by deadline date, no date goes to end
+    const MONTHS_SORT={jan:0,janv:0,'fév':1,févr:1,mar:2,mars:2,avr:3,mai:4,juin:5,juil:6,'aoû':7,août:7,sep:8,sept:8,oct:9,nov:10,'déc':11};
+    function parseDateSort(str){
+      if(!str||str==='—') return null;
+      const parts=str.trim().toLowerCase().replace('.','').split(' ');
+      if(parts.length<2) return null;
+      const m=MONTHS_SORT[parts[0]], d=parseInt(parts[1]);
+      if(m===undefined||isNaN(d)) return null;
+      return new Date(new Date().getFullYear(),m,d);
+    }
+    const sorted=[...projs].sort((a,b)=>{
+      const da=parseDateSort(a.date), db=parseDateSort(b.date);
+      if(!da&&!db) return 0; if(!da) return 1; if(!db) return -1;
+      return da-db;
+    });
+    // Group by month
+    const MONTH_LABELS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    const groups={};
+    sorted.forEach(proj=>{
+      const d=parseDateSort(proj.date);
+      const key=d?`${d.getFullYear()}-${d.getMonth()}`:'zz-sans-date';
+      const label=d?MONTH_LABELS[d.getMonth()]+' '+d.getFullYear():'Sans date';
+      if(!groups[key]) groups[key]={label,projs:[]};
+      groups[key].projs.push(proj);
+    });
+    Object.values(groups).forEach(group=>{
+      html+=`<div style="margin:16px 0 8px;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;padding-left:2px;display:flex;align-items:center;gap:8px">
+        <span>${group.label}</span>
+        <span style="font-size:11px;background:var(--surface2);color:var(--text3);border-radius:20px;padding:1px 8px;font-weight:500;text-transform:none">${group.projs.length} projet${group.projs.length>1?'s':''}</span>
+      </div>`;
+    group.projs.forEach(proj=>{
       const s=STATUTS[proj.status]||STATUTS['Pas commencé'];
       const assignee=PEOPLE.find(p=>p._key===proj._pid);
       const authors=['Admin',...PEOPLE.map(p=>p.name)];
@@ -535,6 +571,7 @@ function renderProjects(){
         </div>
       </div>`;
     });
+    }); // end groups
   }
 
   const btnPid=activeFilter!=='all'?activeFilter:(supports[0]?._key||'');
