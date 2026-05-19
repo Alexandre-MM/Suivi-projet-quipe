@@ -146,9 +146,6 @@
 
 <div class="topbar">
   <div class="logo"><div class="logo-dot"></div> Suivi Projets</div>
-  <button onclick="openMembersModal()" title="Gérer les membres" style="margin-left:8px;width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);cursor:pointer;color:var(--text2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-    <i class="ti ti-users" style="font-size:16px"></i>
-  </button>
   <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
     <label style="font-size:12px;color:var(--text3)">Je suis :</label>
     <select id="myIdentity" onchange="setIdentity(this.value)" style="font-size:12px;padding:4px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;outline:none">
@@ -228,46 +225,9 @@
   </div>
 </div>
 
-<div class="modal-backdrop" id="membersBackdrop">
-  <div class="modal">
-    <h3>Gérer les membres</h3>
-
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <button id="filterAll"  onclick="setFilter('all')"  style="flex:1;padding:6px;font-size:12px;border-radius:var(--radius);border:1px solid var(--border2);cursor:pointer;font-family:inherit;background:var(--accent);color:#fff">Tous</button>
-      <button id="filterCdp"  onclick="setFilter('cdp')"  style="flex:1;padding:6px;font-size:12px;border-radius:var(--radius);border:1px solid var(--border2);cursor:pointer;font-family:inherit;background:var(--surface);color:var(--text2)">Chefs de projet</button>
-      <button id="filterOpe"  onclick="setFilter('ope')"  style="flex:1;padding:6px;font-size:12px;border-radius:var(--radius);border:1px solid var(--border2);cursor:pointer;font-family:inherit;background:var(--surface);color:var(--text2)">Opérateurs</button>
-    </div>
-
-    <div id="membersList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;max-height:240px;overflow-y:auto"></div>
-
-    <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
-      <p style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Ajouter un membre</p>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <input type="text" id="newMemberName" placeholder="Prénom" style="flex:1">
-        <input type="text" id="newMemberInitials" placeholder="XX" style="width:60px">
-        <input type="color" id="newMemberColor" value="#579BFC" style="width:38px;height:38px;padding:2px;border:1px solid var(--border2);border-radius:var(--radius);cursor:pointer;background:var(--surface)">
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
-        <label style="font-size:12px;color:var(--text2);white-space:nowrap">Rôle :</label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;flex:1;padding:7px 10px;border:1px solid var(--border2);border-radius:var(--radius)">
-          <input type="radio" name="newRole" value="operateur" checked> Opérateur <span style="font-size:10px;color:var(--text3)">(a un onglet)</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;flex:1;padding:7px 10px;border:1px solid var(--border2);border-radius:var(--radius)">
-          <input type="radio" name="newRole" value="cdp"> Chef de projet <span style="font-size:10px;color:var(--text3)">(pas d'onglet)</span>
-        </label>
-      </div>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeMembersModal()">Fermer</button>
-      <button class="btn-confirm" onclick="addMember()">Ajouter</button>
-    </div>
-  </div>
-</div>
-
-
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, push, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAyVbN6Dzer5UAYKbzHHB7AUNkHkIHtIJM",
@@ -282,24 +242,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Dynamic members — loaded from Firebase
-let PEOPLE = [];
-let AUTHOR_COLORS = { Admin: '#888888' };
-
+const PEOPLE = [
+  { id:'kim',    name:'Kim',    initials:'KP', color:'#00C875' },
+  { id:'nathan', name:'Nathan', initials:'NP', color:'#579BFC' },
+  { id:'theo',   name:'Théo',   initials:'TB', color:'#FDAB3D' },
+  { id:'mael',   name:'Mael',   initials:'ML', color:'#9B59B6' },
+  { id:'marwen', name:'Marwen', initials:'MW', color:'#00BCD4' },
+];
+const ALL_AUTHORS = ['Kim','Nathan','Théo','Mael','Marwen','Admin'];
+const AUTHOR_COLORS = { Kim:'#00C875', Nathan:'#579BFC', 'Théo':'#FDAB3D', Mael:'#9B59B6', Marwen:'#00BCD4', Admin:'#888888' };
 const STATUTS = {
   'Fait':         { color:'#00C875', bg:'#dcfce7', text:'#166534' },
   'En cours':     { color:'#FDAB3D', bg:'#fef3c7', text:'#92400e' },
   'Pas commencé': { color:'#C4C4C4', bg:'#f5f5f5', text:'#555555' },
   'Bloqué':       { color:'#E2445C', bg:'#ffe4e6', text:'#9f1239' },
 };
-
-const DEFAULT_MEMBERS = [
-  { id:'kim',    name:'Kim',    initials:'KP', color:'#00C875', role:'operateur' },
-  { id:'nathan', name:'Nathan', initials:'NP', color:'#579BFC', role:'operateur' },
-  { id:'theo',   name:'Théo',   initials:'TB', color:'#FDAB3D', role:'operateur' },
-  { id:'mael',   name:'Mael',   initials:'ML', color:'#9B59B6', role:'operateur' },
-  { id:'marwen', name:'Marwen', initials:'MW', color:'#00BCD4', role:'operateur' },
-];
 
 // Seed initial data if DB is empty
 const INITIAL_DATA = {
@@ -436,159 +393,24 @@ async function seedIfEmpty() {
   }
 }
 
-// ── Members management ─────────────────────────────────────────────────────
-function listenMembers() {
-  onValue(ref(db, 'members'), snap => {
-    PEOPLE = [];
-    AUTHOR_COLORS = { Admin: '#888888' };
-    if (snap.exists()) {
-      snap.forEach(child => {
-        const m = { _key: child.key, ...child.val() };
-        PEOPLE.push(m);
-        AUTHOR_COLORS[m.name] = m.color;
-      });
-    }
-    rebuildTabs();
-    updateIdentitySelect();
-    updateMembersList();
-  });
-}
-
-async function seedMembersIfEmpty() {
-  const snap = await new Promise(res => onValue(ref(db, 'members'), res, { onlyOnce: true }));
-  if (snap.exists()) return;
-  for (const m of DEFAULT_MEMBERS) {
-    await push(ref(db, 'members'), { name: m.name, initials: m.initials, color: m.color });
-  }
-}
-
-window.addMember = () => {
-  const name = document.getElementById('newMemberName').value.trim();
-  const initials = document.getElementById('newMemberInitials').value.trim().toUpperCase().slice(0,3);
-  const color = document.getElementById('newMemberColor').value;
-  const role = document.querySelector('input[name="newRole"]:checked')?.value || 'operateur';
-  if (!name) return;
-  push(ref(db, 'members'), { name, initials: initials || name.slice(0,2).toUpperCase(), color, role });
-  document.getElementById('newMemberName').value = '';
-  document.getElementById('newMemberInitials').value = '';
-};
-
-window.removeMember = (key) => {
-  if (!confirm('Supprimer ce membre ? Ses projets ne seront pas supprimés.')) return;
-  remove(ref(db, `members/${key}`));
-};
-
-let membersFilter = 'all';
-window.setFilter = (f) => {
-  membersFilter = f;
-  ['all','cdp','ope'].forEach(x => {
-    const btn = document.getElementById(`filter${x.charAt(0).toUpperCase()+x.slice(1)}`);
-    if (btn) btn.style.background = x===f ? 'var(--accent)' : 'var(--surface)';
-    if (btn) btn.style.color = x===f ? '#fff' : 'var(--text2)';
-  });
-  updateMembersList();
-};
-
-function updateMembersList() {
-  const el = document.getElementById('membersList');
-  if (!el) return;
-  const filtered = PEOPLE.filter(p => {
-    if (membersFilter === 'cdp') return p.role === 'cdp';
-    if (membersFilter === 'ope') return p.role === 'operateur';
-    return true;
-  });
-  el.innerHTML = filtered.length === 0
-    ? `<p style="text-align:center;font-size:13px;color:var(--text3);padding:1rem">Aucun membre dans cette catégorie</p>`
-    : filtered.map(p => `
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border-radius:var(--radius)">
-      <div style="width:28px;height:28px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0">${p.initials}</div>
-      <div style="flex:1;min-width:0">
-        <span style="font-size:13px;font-weight:500">${p.name}</span>
-        <span style="font-size:10px;margin-left:6px;padding:1px 6px;border-radius:10px;${p.role==='cdp'?'background:#EEF4FF;color:#185FA5':'background:#E8F5E9;color:#166534'}">${p.role==='cdp'?'Chef de projet':'Opérateur'}</span>
-      </div>
-      <button onclick="removeMember('${p._key}')" style="background:none;border:none;cursor:pointer;color:var(--text3);padding:4px;border-radius:6px" title="Supprimer">
-        <i class="ti ti-trash" style="font-size:15px"></i>
-      </button>
-    </div>`).join('');
-}
-
-function updateIdentitySelect() {
-  const sel = document.getElementById('myIdentity');
-  if (!sel) return;
-  const current = sel.value;
-  const cdps = PEOPLE.filter(p => p.role === 'cdp');
-  const opes = PEOPLE.filter(p => p.role === 'operateur');
-  sel.innerHTML = `<option value="">— choisir —</option>`;
-  if (cdps.length) sel.innerHTML += `<optgroup label="Chefs de projet">${cdps.map(p=>`<option${p.name===current?' selected':''}>${p.name}</option>`).join('')}</optgroup>`;
-  if (opes.length) sel.innerHTML += `<optgroup label="Opérateurs">${opes.map(p=>`<option${p.name===current?' selected':''}>${p.name}</option>`).join('')}</optgroup>`;
-}
-
-window.openMembersModal = () => {
-  updateMembersList();
-  document.getElementById('membersBackdrop').classList.add('open');
-};
-window.closeMembersModal = () => document.getElementById('membersBackdrop').classList.remove('open');
-document.getElementById('membersBackdrop').addEventListener('click', e => { if(e.target===e.currentTarget) closeMembersModal(); });
-
-// ── Build / rebuild tabs dynamically ──────────────────────────────────────
-let activePid = null;
-function rebuildTabs() {
+// ── Build static tabs + containers ────────────────────────────────────────
+function buildShell() {
   const tabsEl = document.getElementById('tabs');
   const contentEl = document.getElementById('content');
+  PEOPLE.forEach((p, i) => {
+    const tab = document.createElement('div');
+    tab.className = `tab ${i===0?'active':''}`;
+    tab.id = `tab-${p.id}`;
+    tab.onclick = () => switchTab(p.id);
+    tab.innerHTML = `<div class="tab-avatar" style="background:${p.color}">${p.initials}</div>${p.name}<span class="tab-count" id="count-${p.id}">0</span>`;
+    tabsEl.appendChild(tab);
 
-  // Remove old tabs & views for members no longer present
-  const currentIds = new Set(PEOPLE.map(p => p.id || p._key));
-  tabsEl.querySelectorAll('.tab[data-pid]').forEach(t => {
-    if (!currentIds.has(t.dataset.pid)) { t.remove(); }
+    const view = document.createElement('div');
+    view.className = `person-view ${i===0?'active':''}`;
+    view.id = `view-${p.id}`;
+    view.innerHTML = `<div class="loading"><i class="ti ti-loader" style="font-size:20px;animation:spin 1s linear infinite"></i></div>`;
+    contentEl.appendChild(view);
   });
-  contentEl.querySelectorAll('.person-view[data-pid]').forEach(v => {
-    if (!currentIds.has(v.dataset.pid)) { v.remove(); }
-  });
-
-  // Only create tabs for operateurs
-  PEOPLE.forEach((p) => {
-    const pid = p._key;
-    const isOpe = p.role === 'operateur';
-
-    // Remove tab if role changed to CDP
-    if (!isOpe && document.getElementById(`tab-${pid}`)) {
-      document.getElementById(`tab-${pid}`).remove();
-    }
-    // Remove view if role changed to CDP (keep data)
-    // We keep the view but hide it from tabs
-
-    if (isOpe) {
-      if (!document.getElementById(`tab-${pid}`)) {
-        const tab = document.createElement('div');
-        tab.className = 'tab';
-        tab.id = `tab-${pid}`;
-        tab.dataset.pid = pid;
-        tab.onclick = () => switchTab(pid);
-        tab.innerHTML = `<div class="tab-avatar" style="background:${p.color}">${p.initials}</div>${p.name}<span class="tab-count" id="count-${pid}">0</span>`;
-        tabsEl.appendChild(tab);
-      } else {
-        const tab = document.getElementById(`tab-${pid}`);
-        tab.querySelector('.tab-avatar').style.background = p.color;
-        tab.querySelector('.tab-avatar').textContent = p.initials;
-      }
-    }
-
-    if (!document.getElementById(`view-${pid}`)) {
-      const view = document.createElement('div');
-      view.className = 'person-view';
-      view.id = `view-${pid}`;
-      view.dataset.pid = pid;
-      view.innerHTML = `<div class="loading"><i class="ti ti-loader" style="font-size:20px;animation:spin 1s linear infinite"></i></div>`;
-      contentEl.appendChild(view);
-      listenPerson(pid);
-    }
-  });
-
-  // If no active tab, activate first operateur
-  if (!activePid || !document.getElementById(`tab-${activePid}`)) {
-    const firstOpe = PEOPLE.find(p => p.role === 'operateur');
-    if (firstOpe) switchTab(firstOpe._key);
-  }
 }
 
 // ── Listen to projects per person ──────────────────────────────────────────
@@ -663,7 +485,7 @@ function renderPersonView(pid, projects) {
           <div class="msg-thread" id="thread-${proj._key}"><div class="empty-thread">Chargement…</div></div>
           <div class="author-row">
             <label>Envoyer en tant que :</label>
-            <select id="author-${proj._key}">${['Admin', ...PEOPLE.map(p=>p.name)].map(a=>`<option>${a}</option>`).join('')}</select>
+            <select id="author-${proj._key}">${ALL_AUTHORS.map(a=>`<option>${a}</option>`).join('')}</select>
           </div>
           <div class="input-zone">
             <textarea id="input-${proj._key}" placeholder="Écrire un message… (Entrée pour envoyer)"
@@ -772,14 +594,11 @@ window.changeStatus = (pid, projKey, newStatus) => {
 };
 
 window.switchTab = (pid) => {
-  activePid = pid;
   currentPid = pid;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  const tab = document.getElementById(`tab-${pid}`);
-  if (tab) tab.classList.add('active');
+  document.getElementById(`tab-${pid}`).classList.add('active');
   document.querySelectorAll('.person-view').forEach(v => v.classList.remove('active'));
-  const view = document.getElementById(`view-${pid}`);
-  if (view) view.classList.add('active');
+  document.getElementById(`view-${pid}`).classList.add('active');
 };
 
 window.openModal = (pid) => {
@@ -825,11 +644,13 @@ style.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
 document.head.appendChild(style);
 
 // ── Init ───────────────────────────────────────────────────────────────────
+buildShell();
 await seedIfEmpty();
-await seedMembersIfEmpty();
-listenMembers();
+PEOPLE.forEach(p => listenPerson(p.id));
 
 if (myName) {
+  const sel = document.getElementById('myIdentity');
+  sel.value = myName;
   updateNotifBtn();
 }
 setTimeout(() => { appReady = true; }, 2000);
