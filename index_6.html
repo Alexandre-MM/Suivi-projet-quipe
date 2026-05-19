@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi Projets</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F7F5;--surface:#fff;--surface2:#F2F2F0;
+  --border:rgba(0,0,0,.09);--border2:rgba(0,0,0,.16);
+  --text:#1A1A1A;--text2:#6B6B6B;--text3:#A0A0A0;
+  --radius:10px;--radius-lg:14px;--accent:#E2445C
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#111110;--surface:#1C1C1A;--surface2:#252523;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.15);
+  --text:#EBEBEB;--text2:#999;--text3:#666
+}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:10px;height:56px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);cursor:pointer;color:var(--text2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.icon-btn:hover{color:var(--text)}
+.icon-btn.active{color:#00C875;border-color:#00C875}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.sync-badge{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#ccc;transition:background .3s}
+.sync-dot.live{background:#00C875}
+.filters-wrap{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 1.5rem;display:flex;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none}
+.filters-wrap::-webkit-scrollbar{display:none}
+.filter-chip{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;border:1.5px solid var(--border2);background:var(--surface);color:var(--text2);white-space:nowrap;transition:all .15s;user-select:none;flex-shrink:0}
+.filter-chip:hover{border-color:var(--accent);color:var(--accent)}
+.filter-chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip-avatar{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff;flex-shrink:0}
+.filter-divider{width:1px;height:24px;background:var(--border2);flex-shrink:0;margin:0 2px}
+.content{max-width:860px;margin:0 auto;padding:1.25rem 1.5rem 3rem}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:1.25rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.stat-value{font-size:26px;font-weight:600}
+.section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px;padding-left:2px}
+.project-list{display:flex;flex-direction:column;gap:8px}
+.project-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:border-color .15s}
+.project-card:hover,.project-card.open{border-color:var(--border2)}
+.project-header{padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px}
+.status-stripe{width:3px;height:36px;border-radius:2px;flex-shrink:0}
+.project-info{flex:1;min-width:0}
+.project-name{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.project-sub{display:flex;align-items:center;gap:8px;margin-top:4px}
+.project-date{font-size:12px;color:var(--text2)}
+.assignee-avatar{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff;flex-shrink:0;cursor:pointer}
+.pct-wrap{display:flex;align-items:center;gap:6px}
+.pct-bar{width:60px;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.pct-fill{height:100%;border-radius:2px;transition:width .4s}
+.pct-label{font-size:11px;color:var(--text3);min-width:26px}
+.status-badge{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;cursor:pointer;border:none;font-family:inherit}
+.msg-count{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text3);flex-shrink:0}
+.chevron-icon{font-size:16px;color:var(--text3);transition:transform .2s;flex-shrink:0}
+.project-card.open .chevron-icon{transform:rotate(180deg)}
+.messages-panel{display:none;border-top:1px solid var(--border)}
+.project-card.open .messages-panel{display:block}
+.proj-info-panel{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
+.pct-editor{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.pct-editor label{font-size:12px;color:var(--text2);white-space:nowrap}
+.pct-editor input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
+.pct-val{font-size:13px;font-weight:600;color:var(--text);min-width:36px;text-align:right}
+.msg-thread{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.msg{display:flex;gap:10px;align-items:flex-start;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.msg-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0;margin-top:1px}
+.msg-body{flex:1;min-width:0}
+.msg-meta{display:flex;align-items:baseline;gap:8px;margin-bottom:5px}
+.msg-author{font-size:13px;font-weight:500;color:var(--text)}
+.msg-time{font-size:11px;color:var(--text3)}
+.msg-bubble{font-size:13px;color:var(--text);background:var(--surface2);border-radius:2px var(--radius) var(--radius) var(--radius);padding:9px 13px;line-height:1.55;display:inline-block;max-width:100%;word-break:break-word}
+.empty-thread{padding:12px 0;text-align:center;font-size:13px;color:var(--text3)}
+.author-row{padding:10px 16px 0;display:flex;align-items:center;gap:8px}
+.author-row label{font-size:12px;color:var(--text2)}
+.author-row select{font-size:12px;padding:4px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;outline:none}
+.input-zone{padding:10px 16px 14px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end}
+.input-zone textarea{flex:1;min-height:38px;max-height:120px;padding:9px 12px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface);color:var(--text);resize:none;font-family:inherit;line-height:1.5;outline:none;transition:border-color .15s}
+.input-zone textarea:focus{border-color:var(--accent)}
+.input-zone textarea::placeholder{color:var(--text3)}
+.send-btn{width:38px;height:38px;border-radius:var(--radius);background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff}
+.send-btn:hover{opacity:.85}
+.mention{background:#fef3c7;color:#92400e;border-radius:4px;padding:1px 5px;font-weight:600;font-size:12px}
+.mention.me{background:#E2445C;color:#fff}
+.add-project-btn{display:flex;align-items:center;gap:8px;width:100%;padding:12px 16px;background:var(--surface);border:1px dashed var(--border2);border-radius:var(--radius-lg);color:var(--text2);font-size:13px;cursor:pointer;font-family:inherit;margin-top:8px;transition:all .15s}
+.add-project-btn:hover{border-color:var(--accent);color:var(--accent)}
+.empty-state{text-align:center;padding:3rem 0;color:var(--text3);font-size:14px}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:480px;margin:1rem;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:1rem}
+.modal label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px;margin-top:12px}
+.modal input,.modal select,.modal textarea{width:100%;padding:8px 12px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface);color:var(--text);outline:none;font-family:inherit}
+.modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--accent)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem}
+.btn-cancel{padding:8px 16px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text2);cursor:pointer;font-family:inherit}
+.btn-confirm{padding:8px 16px;font-size:13px;border:none;border-radius:var(--radius);background:var(--accent);color:#fff;cursor:pointer;font-family:inherit;font-weight:500}
+.role-pill{font-size:10px;padding:1px 7px;border-radius:10px;font-weight:500}
+.role-cdp{background:#EEF4FF;color:#185FA5}
+.role-sup{background:#E8F5E9;color:#166534}
+@media(max-width:600px){
+  .content{padding:.75rem}
+  .topbar,.filters-wrap{padding:0 .75rem}
+  .filters-wrap{padding-top:10px;padding-bottom:10px}
+  .project-header{padding:12px;gap:8px}
+  .project-name{font-size:13px}
+  .project-date,.msg-count{display:none}
+  .pct-bar{width:36px}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .stat-value{font-size:22px}
+  .msg-thread,.input-zone,.author-row,.pct-editor,.proj-info-panel{padding-left:12px;padding-right:12px}
+}
+
+/* CALENDAR */
+.view-toggle{display:flex;gap:6px;margin-left:auto}
+.view-btn{padding:5px 12px;font-size:12px;font-weight:500;border-radius:20px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;font-family:inherit}
+.view-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.cal-wrap{max-width:1100px;margin:0 auto;padding:1.25rem 1.5rem 3rem}
+.cal-nav{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem}
+.cal-nav-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);cursor:pointer;color:var(--text2);display:flex;align-items:center;justify-content:center;font-size:16px}
+.cal-nav-btn:hover{color:var(--text)}
+.cal-title{font-size:15px;font-weight:600;color:var(--text)}
+.cal-today-btn{padding:4px 12px;font-size:12px;border-radius:20px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);cursor:pointer;font-family:inherit}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border)}
+.cal-day-header{background:var(--surface2);padding:8px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);text-align:center}
+.cal-day{background:var(--surface);min-height:140px;padding:8px;display:flex;flex-direction:column;gap:4px;position:relative}
+.cal-day.today{background:var(--surface)}
+.cal-day-num{font-size:12px;font-weight:600;color:var(--text3);margin-bottom:2px;display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;flex-shrink:0}
+.cal-day.today .cal-day-num{background:var(--accent);color:#fff}
+.cal-day.other-month{background:var(--bg)}
+.cal-day.other-month .cal-day-num{color:var(--text3);opacity:.4}
+.cal-event{padding:3px 7px;border-radius:5px;font-size:11px;font-weight:500;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .15s;line-height:1.4}
+.cal-event:hover{opacity:.8}
+.cal-event.deadline{border-left:3px solid;}
+.cal-event.created{border-left:3px solid;opacity:.7}
+.cal-more{font-size:10px;color:var(--text3);cursor:pointer;padding:2px 4px}
+.cal-legend{display:flex;align-items:center;gap:16px;margin-bottom:12px;font-size:12px;color:var(--text2)}
+.cal-legend-item{display:flex;align-items:center;gap:6px}
+.cal-legend-dot{width:10px;height:3px;border-radius:2px}
+@media(max-width:700px){
+  .cal-grid{grid-template-columns:repeat(7,1fr)}
+  .cal-day{min-height:80px;padding:4px}
+  .cal-event{font-size:10px;padding:2px 4px}
+  .cal-wrap{padding:.75rem}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><div class="logo-dot"></div> Suivi Projets</div>
+  <button class="icon-btn" onclick="openMembersModal()" title="Gérer les membres"><i class="ti ti-users" style="font-size:16px"></i></button>
+  <div class="topbar-right">
+    <label style="font-size:12px;color:var(--text3)">Je suis :</label>
+    <select id="myIdentity" onchange="setIdentity(this.value)" style="font-size:12px;padding:4px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;outline:none"></select>
+    <button id="notifBtn" class="icon-btn" onclick="requestNotifPermission()" style="display:none" title="Activer les notifications"><i class="ti ti-bell" style="font-size:16px"></i></button>
+    <div class="sync-badge"><div class="sync-dot" id="syncDot"></div><span id="syncLabel">Connexion…</span></div>
+  </div>
+</div>
+
+<div class="filters-wrap" id="filters"></div>
+<div class="content" id="content"></div>
+<div class="cal-wrap" id="calWrap" style="display:none">
+  <div class="cal-legend">
+    <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#E2445C"></div> Date limite</div>
+    <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#94a3b8"></div> Date de création</div>
+  </div>
+  <div class="cal-nav">
+    <button class="cal-nav-btn" onclick="calPrev()"><i class="ti ti-chevron-left"></i></button>
+    <span class="cal-title" id="calTitle"></span>
+    <button class="cal-nav-btn" onclick="calNext()"><i class="ti ti-chevron-right"></i></button>
+    <button class="cal-today-btn" onclick="calToday()">Aujourd'hui</button>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+</div>
+
+<!-- Modal nouveau projet -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3>Nouveau projet</h3>
+    <label>Nom du projet *</label>
+    <input type="text" id="modalName" placeholder="Ex: CANAL TOYS UK - Variations">
+    <label>Assigner à *</label>
+    <select id="modalAssignee"></select>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+      <div><label style="margin-top:0">Date limite</label><input type="text" id="modalDate" placeholder="Ex: mai 15"></div>
+      <div><label style="margin-top:0">Priorité</label>
+        <select id="modalPriority">
+          <option value="">— aucune —</option>
+          <option value="haute">🔴 Haute</option>
+          <option value="normale">🟡 Normale</option>
+          <option value="basse">🟢 Basse</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+      <div><label style="margin-top:0">Statut</label>
+        <select id="modalStatus"><option>Pas commencé</option><option>En cours</option><option>Fait</option><option>Bloqué</option></select>
+      </div>
+      <div><label style="margin-top:0">Avancement</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <input type="range" id="modalPct" min="0" max="100" step="5" value="0" style="flex:1;accent-color:#E2445C" oninput="document.getElementById('modalPctVal').textContent=this.value+'%'">
+          <span id="modalPctVal" style="font-size:12px;font-weight:600;min-width:32px">0%</span>
+        </div>
+      </div>
+    </div>
+    <label>Description / contexte</label>
+    <textarea id="modalDesc" placeholder="Informations utiles, contexte client…" style="min-height:72px;resize:vertical"></textarea>
+    <label>Lien fichier</label>
+    <div style="display:flex;gap:8px">
+      <input type="url" id="modalLink" placeholder="https://drive.google.com/…" style="flex:1">
+      <input type="text" id="modalLinkLabel" placeholder="Nom" style="width:120px">
+    </div>
+    <label>Estimation du temps</label>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="number" id="modalTimeVal" placeholder="Ex: 2" min="0" step="0.5" style="width:100px">
+      <select id="modalTimeUnit" style="flex:1">
+        <option value="minutes">minutes</option>
+        <option value="heures" selected>heures</option>
+        <option value="jours">jours</option>
+        <option value="semaines">semaines</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-confirm" onclick="confirmAddProject()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal membres -->
+<div class="modal-backdrop" id="membersBackdrop">
+  <div class="modal">
+    <h3>Gérer les membres</h3>
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <button id="filterAll" onclick="setMemberFilter('all')" style="flex:1;padding:6px;font-size:12px;border-radius:var(--radius);border:1px solid var(--border2);cursor:pointer;font-family:inherit;background:var(--accent);color:#fff">Tous</button>
+      <button id="filterCdp" onclick="setMemberFilter('cdp')" style="flex:1;padding:6px;font-size:12px;border-radius:var(--radius);border:1px solid var(--border2);cursor:pointer;font-family:inherit;background:var(--surface);color:var(--text2)">Consultants</button>
+      <button id="filterSup" onclick="setMemberFilter('sup')" style="flex:1;padding:6px;font-size:12px;border-radius:var(--radius);border:1px solid var(--border2);cursor:pointer;font-family:inherit;background:var(--surface);color:var(--text2)">Supports</button>
+    </div>
+    <div id="membersList" style="display:flex;flex-direction:column;gap:7px;max-height:220px;overflow-y:auto;margin-bottom:16px"></div>
+    <div style="border-top:1px solid var(--border);padding-top:14px">
+      <p style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">Ajouter un membre</p>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input type="text" id="newMemberName" placeholder="Prénom" style="flex:1;padding:8px 10px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface);color:var(--text);outline:none;font-family:inherit">
+        <input type="text" id="newMemberInitials" placeholder="XX" style="width:60px;padding:8px 10px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface);color:var(--text);outline:none;font-family:inherit">
+        <input type="color" id="newMemberColor" value="#579BFC" style="width:40px;height:38px;padding:2px;border:1px solid var(--border2);border-radius:var(--radius);cursor:pointer">
+      </div>
+      <div style="display:flex;gap:8px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;flex:1;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius);margin:0">
+          <input type="radio" name="newRole" value="support" checked> Support <span style="font-size:10px;color:var(--text3)">(filtre visible)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;flex:1;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius);margin:0">
+          <input type="radio" name="newRole" value="cdp"> Consultant <span style="font-size:10px;color:var(--text3)">(crée des tâches)</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeMembersModal()">Fermer</button>
+      <button class="btn-confirm" onclick="addMember()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const db = getDatabase(initializeApp({
+  apiKey:"AIzaSyAyVbN6Dzer5UAYKbzHHB7AUNkHkIHtIJM",
+  authDomain:"suivi-projet-equipe.firebaseapp.com",
+  databaseURL:"https://suivi-projet-equipe-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"suivi-projet-equipe",
+  storageBucket:"suivi-projet-equipe.firebasestorage.app",
+  messagingSenderId:"1015970309178",
+  appId:"1:1015970309178:web:609eeb7c7e947be0f28103"
+}));
+
+let PEOPLE=[], COLORS={Admin:'#888'}, ALL_PROJECTS={};
+let activeFilter='all', memberFilter='all';
+let myName=localStorage.getItem('myName')||'';
+let knownKeys=new Set(), appReady=false;
+const listenedProjs=new Set(), projNames={}, listenedPids=new Set();
+
+const STATUTS={
+  'Fait':        {color:'#00C875',bg:'#dcfce7',text:'#166534'},
+  'En cours':    {color:'#FDAB3D',bg:'#fef3c7',text:'#92400e'},
+  'Pas commencé':{color:'#C4C4C4',bg:'#f5f5f5',text:'#555'},
+  'Bloqué':      {color:'#E2445C',bg:'#ffe4e6',text:'#9f1239'},
+};
+const isSupport=p=>p.role==='support'||p.role==='operateur'||!p.role;
+const isCdp=p=>p.role==='cdp';
+
+const DEFAULT_MEMBERS=[
+  {name:'Kim',    initials:'KP',color:'#00C875',role:'support'},
+  {name:'Nathan', initials:'NP',color:'#579BFC',role:'support'},
+  {name:'Théo',   initials:'TB',color:'#FDAB3D',role:'support'},
+  {name:'Mael',   initials:'ML',color:'#9B59B6',role:'support'},
+  {name:'Marwen', initials:'MW',color:'#00BCD4',role:'support'},
+];
+
+// ── Seed ───────────────────────────────────────────────────────────────────
+async function seedData(){
+  const [mSnap,pSnap]=await Promise.all([
+    new Promise(r=>onValue(ref(db,'members'),r,{onlyOnce:true})),
+    new Promise(r=>onValue(ref(db,'projects'),r,{onlyOnce:true})),
+  ]);
+  if(!mSnap.exists()){
+    for(const m of DEFAULT_MEMBERS) await push(ref(db,'members'),m);
+  }
+  if(!pSnap.exists()){
+    const ms=await new Promise(r=>onValue(ref(db,'members'),r,{onlyOnce:true}));
+    const n2k={};
+    ms.forEach(c=>{n2k[c.val().name.toLowerCase()]=c.key;});
+    const seeds=[
+      {pid:'kim',    name:'Vilac - Seller - Création Variation produit',          status:'Pas commencé',date:'mai 6',   pct:0,  msgs:[{a:'Kim',t:'06/05 9h14',m:'Besoin de confirmation sur les SKUs.'},{a:'Admin',t:'06/05 11h02',m:'SKUs confirmés !'}]},
+      {pid:'kim',    name:'CANAL TOYS UK - 5 Variations upload template',          status:'Pas commencé',date:'mai 6',   pct:0,  msgs:[]},
+      {pid:'kim',    name:'CANAL TOYS DE - litiges à lancer',                      status:'Pas commencé',date:'mai 6',   pct:0,  msgs:[]},
+      {pid:'kim',    name:'LISCIANI DE - FR - UK - Variations selon fichier',      status:'En cours',    date:'mai 8',   pct:30, msgs:[{a:'Kim',t:'08/05 10h00',m:'47 variations reçues.'},{a:'Admin',t:'08/05 16h20',m:'Priorité UK.'},{a:'Kim',t:'08/05 16h45',m:'Ok, UK en premier.'}]},
+      {pid:'nathan', name:'Jeujura - Création produits + visuels',                 status:'En cours',    date:'mai 4',   pct:40, msgs:[{a:'Nathan',t:'04/05 9h00',m:'Visuels pas aux bonnes dimensions.'},{a:'Admin',t:'04/05 11h30',m:'Relance envoyée.'}]},
+      {pid:'nathan', name:'MEGABLEU FR / NL - Page A+ & MAJ store',                status:'En cours',    date:'mai 4',   pct:60, msgs:[{a:'Nathan',t:'04/05 17h00',m:'Page A+ FR créée.'}]},
+      {pid:'nathan', name:'LANSAY FR - MAJ store avec nouveautés PE26',            status:'En cours',    date:'mai 6',   pct:50, msgs:[]},
+      {pid:'nathan', name:'LISCIANI FR - DE - ES : Vérification & Optimisation',  status:'En cours',    date:'févr. 20',pct:20, msgs:[{a:'Nathan',t:'20/02 11h00',m:'Audit terminé, 32 fiches.'}]},
+      {pid:'théo',   name:'Clementoni / Création matrice + Optimisations',        status:'Fait',        date:'mai 1',   pct:100,msgs:[{a:'Théo',t:'01/05 18h00',m:'Terminé !'},{a:'Admin',t:'01/05 18h30',m:'Validé !'}]},
+    ];
+    for(const p of seeds){
+      const pid=n2k[p.pid]||p.pid;
+      const pr=push(ref(db,`projects/${pid}`));
+      await set(pr,{name:p.name,status:p.status,date:p.date,pct:p.pct,desc:'',link:'',linkLabel:'',priority:''});
+      for(const m of p.msgs) await push(ref(db,`messages/${pr.key}`),{author:m.a,time:m.t,text:m.m});
+    }
+  }
+}
+
+// ── Identity ───────────────────────────────────────────────────────────────
+window.setIdentity=name=>{myName=name;localStorage.setItem('myName',name);updateNotifBtn();};
+function updateNotifBtn(){
+  const btn=document.getElementById('notifBtn');
+  if(!myName){btn.style.display='none';return;}
+  btn.style.display='flex';
+  btn.classList.toggle('active',Notification.permission==='granted');
+}
+window.requestNotifPermission=async()=>{
+  await Notification.requestPermission(); updateNotifBtn();
+  if(Notification.permission==='granted') toast('Notifications activées !');
+};
+function maybeNotify(projName,msg){
+  if(!myName||!appReady||msg.author===myName) return;
+  if(!(msg.text||'').toLowerCase().includes('@'+myName.toLowerCase())) return;
+  if(Notification.permission==='granted'){
+    const n=new Notification(`@${myName} mentionné — ${projName}`,{body:`${msg.author} : ${msg.text}`});
+    n.onclick=()=>{window.focus();n.close();};
+  }
+  toast(`@${myName} mentionné par ${msg.author}`);
+}
+function toast(msg){
+  let t=document.getElementById('_toast');
+  if(!t){t=document.createElement('div');t.id='_toast';t.style.cssText='position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#1A1A1A;color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;z-index:999;transition:opacity .3s;pointer-events:none';document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity='1';clearTimeout(t._t);t._t=setTimeout(()=>t.style.opacity='0',3000);
+}
+
+// ── Members ────────────────────────────────────────────────────────────────
+function listenMembers(){
+  onValue(ref(db,'members'),snap=>{
+    PEOPLE=[];COLORS={Admin:'#888'};
+    snap.forEach(c=>{const m={_key:c.key,...c.val()};PEOPLE.push(m);COLORS[m.name]=m.color;});
+    renderFilters();
+    refreshIdentitySelect();
+    refreshAssigneeSelect();
+    renderMembersList();
+    // Start listening to projects for any new support member
+    PEOPLE.filter(isSupport).forEach(p=>{
+      if(!listenedPids.has(p._key)) listenPersonProjects(p._key);
+    });
+  });
+}
+
+window.addMember=()=>{
+  const name=document.getElementById('newMemberName').value.trim();
+  if(!name) return;
+  const initials=document.getElementById('newMemberInitials').value.trim().toUpperCase()||name.slice(0,2).toUpperCase();
+  const color=document.getElementById('newMemberColor').value;
+  const role=document.querySelector('input[name="newRole"]:checked')?.value||'support';
+  push(ref(db,'members'),{name,initials,color,role});
+  document.getElementById('newMemberName').value='';
+  document.getElementById('newMemberInitials').value='';
+};
+window.removeMember=key=>{
+  if(!confirm('Supprimer ce membre ?')) return;
+  remove(ref(db,`members/${key}`));
+};
+window.setMemberFilter=f=>{
+  memberFilter=f;
+  ['all','cdp','sup'].forEach(x=>{
+    const btn=document.getElementById('filter'+x.charAt(0).toUpperCase()+x.slice(1));
+    if(btn){btn.style.background=x===f?'var(--accent)':'var(--surface)';btn.style.color=x===f?'#fff':'var(--text2)';}
+  });
+  renderMembersList();
+};
+function renderMembersList(){
+  const el=document.getElementById('membersList');if(!el) return;
+  const list=PEOPLE.filter(p=>memberFilter==='cdp'?isCdp(p):memberFilter==='sup'?isSupport(p):true);
+  if(!list.length){el.innerHTML='<p style="text-align:center;font-size:13px;color:var(--text3);padding:1rem">Aucun membre</p>';return;}
+  el.innerHTML=list.map(p=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border-radius:var(--radius)">
+      <div style="width:28px;height:28px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0">${p.initials}</div>
+      <div style="flex:1"><span style="font-size:13px;font-weight:500">${p.name}</span>
+        <span class="role-pill ${isCdp(p)?'role-cdp':'role-sup'}" style="margin-left:6px">${isCdp(p)?'Consultant':'Support'}</span>
+      </div>
+      <button onclick="removeMember('${p._key}')" style="background:none;border:none;cursor:pointer;color:var(--text3);padding:4px"><i class="ti ti-trash" style="font-size:15px"></i></button>
+    </div>`).join('');
+}
+function refreshIdentitySelect(){
+  const sel=document.getElementById('myIdentity');if(!sel) return;
+  const cdps=PEOPLE.filter(isCdp),opes=PEOPLE.filter(isSupport);
+  sel.innerHTML='<option value="">— choisir —</option>';
+  if(cdps.length) sel.innerHTML+=`<optgroup label="Consultants">${cdps.map(p=>`<option${p.name===myName?' selected':''}>${p.name}</option>`).join('')}</optgroup>`;
+  if(opes.length) sel.innerHTML+=`<optgroup label="Supports">${opes.map(p=>`<option${p.name===myName?' selected':''}>${p.name}</option>`).join('')}</optgroup>`;
+}
+function refreshAssigneeSelect(){
+  const sel=document.getElementById('modalAssignee');if(!sel) return;
+  const supports=PEOPLE.filter(isSupport);
+  sel.innerHTML=supports.length
+    ? supports.map(p=>`<option value="${p._key}">${p.name}</option>`).join('')
+    : '<option value="">Aucun support disponible</option>';
+}
+window.openMembersModal=()=>{renderMembersList();document.getElementById('membersBackdrop').classList.add('open');};
+window.closeMembersModal=()=>document.getElementById('membersBackdrop').classList.remove('open');
+document.getElementById('membersBackdrop').addEventListener('click',e=>{if(e.target===e.currentTarget)closeMembersModal();});
+
+// ── Filters bar ────────────────────────────────────────────────────────────
+function renderFilters(){
+  const el=document.getElementById('filters');if(!el) return;
+  const supports=PEOPLE.filter(isSupport);
+  let html=`<div class="filter-chip ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">Tous les projets</div>`;
+  if(supports.length){
+    html+=`<div class="filter-divider"></div>`;
+    html+=supports.map(p=>`
+      <div class="filter-chip ${activeFilter===p._key?'active':''}" onclick="setFilter('${p._key}')">
+        <div class="chip-avatar" style="background:${activeFilter===p._key?'rgba(255,255,255,.35)':p.color}">${p.initials}</div>
+        ${p.name}
+      </div>`).join('');
+  }
+  el.innerHTML=html;
+}
+window.setFilter=pid=>{activeFilter=pid;renderFilters();renderProjects();};
+
+// ── Project listening ──────────────────────────────────────────────────────
+function listenPersonProjects(pid){
+  if(listenedPids.has(pid)) return;
+  listenedPids.add(pid);
+  onValue(ref(db,`projects/${pid}`),snap=>{
+    const projs=[];
+    snap.forEach(c=>projs.push({_key:c.key,_pid:pid,...c.val()}));
+    ALL_PROJECTS[pid]=projs;
+    renderProjects();
+    projs.forEach(p=>listenMsgs(p._key,p.name));
+  });
+}
+
+// ── Render projects ────────────────────────────────────────────────────────
+function renderProjects(){
+  const projs=activeFilter==='all'?Object.values(ALL_PROJECTS).flat():(ALL_PROJECTS[activeFilter]||[]);
+  const fait=projs.filter(p=>p.status==='Fait').length;
+  const enC=projs.filter(p=>p.status==='En cours').length;
+  const blq=projs.filter(p=>p.status==='Bloqué').length;
+  const supports=PEOPLE.filter(isSupport);
+
+  let html=`<div class="stats-row">
+    <div class="stat-card"><div class="stat-label">Projets</div><div class="stat-value">${projs.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Fait</div><div class="stat-value" style="color:#00C875">${fait}</div></div>
+    <div class="stat-card"><div class="stat-label">En cours</div><div class="stat-value" style="color:#FDAB3D">${enC}</div></div>
+    <div class="stat-card"><div class="stat-label">Bloqué</div><div class="stat-value" style="color:#E2445C">${blq}</div></div>
+  </div><div class="section-title">Projets</div><div class="project-list">`;
+
+  if(!projs.length){
+    html+='<div class="empty-state"><i class="ti ti-inbox" style="font-size:36px;display:block;margin-bottom:12px;opacity:.35"></i>Aucun projet</div>';
+  } else {
+    projs.forEach(proj=>{
+      const s=STATUTS[proj.status]||STATUTS['Pas commencé'];
+      const assignee=PEOPLE.find(p=>p._key===proj._pid);
+      const authors=['Admin',...PEOPLE.map(p=>p.name)];
+      html+=`<div class="project-card" id="card-${proj._key}">
+        <div class="project-header" onclick="toggleCard('${proj._key}')">
+          <div class="status-stripe" style="background:${s.color}"></div>
+          <div class="project-info">
+            <div class="project-name">${proj.name}</div>
+            <div class="project-sub">
+              ${assignee?`<div class="assignee-avatar" style="background:${assignee.color}" title="${assignee.name}">${assignee.initials}</div>`:''}
+              <span class="project-date">${proj.date||''}</span>
+              <div class="pct-wrap">
+                <div class="pct-bar"><div class="pct-fill" style="width:${proj.pct||0}%;background:${s.color}"></div></div>
+                <span class="pct-label">${proj.pct||0}%</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+            <select class="status-badge" style="background:${s.bg};color:${s.text}" onclick="event.stopPropagation()" onchange="changeStatus('${proj._pid}','${proj._key}',this.value)">
+              ${Object.keys(STATUTS).map(st=>`<option${st===proj.status?' selected':''}>${st}</option>`).join('')}
+            </select>
+            <span class="msg-count" id="msgcount-${proj._key}"><i class="ti ti-message-circle" style="font-size:14px"></i>…</span>
+            <i class="ti ti-chevron-down chevron-icon"></i>
+          </div>
+        </div>
+        <div class="messages-panel">
+          ${proj.desc||proj.link||proj.priority||proj.timeVal?`<div class="proj-info-panel">
+            ${proj.priority?`<div style="font-size:12px;color:var(--text2)">Priorité : <strong>${proj.priority==='haute'?'🔴 Haute':proj.priority==='normale'?'🟡 Normale':'🟢 Basse'}</strong></div>`:''}
+            ${proj.timeVal?`<div style="font-size:12px;color:var(--text2)">⏱ Estimation : <strong>${proj.timeVal} ${proj.timeUnit}</strong></div>`:''}
+            ${proj.desc?`<div style="font-size:13px;color:var(--text2);line-height:1.55">${proj.desc}</div>`:''}
+            ${proj.link?`<a href="${proj.link}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#579BFC;font-weight:500;text-decoration:none"><i class="ti ti-external-link" style="font-size:14px"></i>${proj.linkLabel||'Ouvrir le fichier'}</a>`:''}
+          </div>`:''}
+          <div class="pct-editor">
+            <label>Avancement :</label>
+            <input type="range" min="0" max="100" step="5" value="${proj.pct||0}"
+              oninput="document.getElementById('pv-${proj._key}').textContent=this.value+'%'"
+              onchange="changePct('${proj._pid}','${proj._key}',this.value)">
+            <span class="pct-val" id="pv-${proj._key}">${proj.pct||0}%</span>
+          </div>
+          <div class="msg-thread" id="thread-${proj._key}"><div class="empty-thread">Chargement…</div></div>
+          <div class="author-row">
+            <label>En tant que :</label>
+            <select id="author-${proj._key}">${authors.map(a=>`<option>${a}</option>`).join('')}</select>
+          </div>
+          <div class="input-zone">
+            <textarea id="input-${proj._key}" placeholder="Écrire… @Prénom pour mentionner (Entrée pour envoyer)"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg('${proj._pid}','${proj._key}')}"
+              oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+            <button class="send-btn" onclick="sendMsg('${proj._pid}','${proj._key}')"><i class="ti ti-send" style="font-size:17px"></i></button>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+
+  const btnPid=activeFilter!=='all'?activeFilter:(supports[0]?._key||'');
+  html+=`</div><button class="add-project-btn" onclick="openModal('${btnPid}')"><i class="ti ti-plus" style="font-size:16px"></i> Ajouter un projet</button>`;
+
+  const contentEl=document.getElementById('content');
+  const open=new Set();
+  contentEl.querySelectorAll('.project-card.open').forEach(c=>open.add(c.id));
+  contentEl.innerHTML=html;
+  open.forEach(id=>document.getElementById(id)?.classList.add('open'));
+}
+
+// ── Messages ───────────────────────────────────────────────────────────────
+function listenMsgs(projKey,projName){
+  projNames[projKey]=projName;
+  if(listenedProjs.has(projKey)) return;
+  listenedProjs.add(projKey);
+  let first=true;
+  onValue(ref(db,`messages/${projKey}`),snap=>{
+    const msgs=[];
+    snap.forEach(c=>{
+      const k=c.key,v={_key:k,...c.val()};msgs.push(v);
+      if(!first&&!knownKeys.has(k)) maybeNotify(projNames[projKey]||'',v);
+      knownKeys.add(k);
+    });
+    first=false;
+    const thread=document.getElementById(`thread-${projKey}`);
+    const count=document.getElementById(`msgcount-${projKey}`);
+    if(thread) thread.innerHTML=msgs.length?msgs.map(renderMsg).join(''):'<div class="empty-thread">Aucun message — soyez le premier !</div>';
+    if(count) count.innerHTML=`<i class="ti ti-message-circle" style="font-size:14px"></i>${msgs.length}`;
+  });
+}
+function renderMsg(m){
+  const color=COLORS[m.author]||'#888';
+  const init=(m.author||'?').substring(0,2).toUpperCase();
+  const text=(m.text||'').replace(/@(\w+)/g,(match,n)=>`<span class="mention${myName&&n.toLowerCase()===myName.toLowerCase()?' me':''}">${match}</span>`);
+  return `<div class="msg"><div class="msg-avatar" style="background:${color}">${init}</div><div class="msg-body"><div class="msg-meta"><span class="msg-author">${m.author}</span><span class="msg-time">${m.time}</span></div><div class="msg-bubble">${text}</div></div></div>`;
+}
+
+// ── Actions ────────────────────────────────────────────────────────────────
+window.toggleCard  =k=>document.getElementById(`card-${k}`)?.classList.toggle('open');
+window.changeStatus=(pid,k,v)=>update(ref(db,`projects/${pid}/${k}`),{status:v});
+window.changePct   =(pid,k,v)=>update(ref(db,`projects/${pid}/${k}`),{pct:parseInt(v)});
+window.sendMsg=(pid,projKey)=>{
+  const inp=document.getElementById(`input-${projKey}`);
+  const author=document.getElementById(`author-${projKey}`)?.value||'Moi';
+  const text=inp.value.trim();if(!text) return;
+  const now=new Date();
+  const time=`${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')} ${now.getHours()}h${now.getMinutes().toString().padStart(2,'0')}`;
+  push(ref(db,`messages/${projKey}`),{author,time,text});
+  inp.value='';inp.style.height='auto';
+};
+window.openModal=pid=>{
+  refreshAssigneeSelect();
+  const sel=document.getElementById('modalAssignee');
+  if(pid&&sel){for(const o of sel.options)if(o.value===pid){o.selected=true;break;}}
+  ['modalName','modalDesc','modalLink','modalLinkLabel'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('modalPct').value=0;
+  document.getElementById('modalPctVal').textContent='0%';
+  document.getElementById('modalStatus').value='Pas commencé';
+  document.getElementById('modalTimeVal').value='';
+  document.getElementById('modalTimeUnit').value='heures';
+  document.getElementById('modalBackdrop').classList.add('open');
+  setTimeout(()=>document.getElementById('modalName').focus(),100);
+};
+window.closeModal=()=>document.getElementById('modalBackdrop').classList.remove('open');
+window.confirmAddProject=()=>{
+  const name=document.getElementById('modalName').value.trim();
+  const pid=document.getElementById('modalAssignee').value;
+  if(!name||!pid){toast('Remplis le nom et choisis un support !');return;}
+  push(ref(db,`projects/${pid}`),{
+    name,
+    status: document.getElementById('modalStatus').value,
+    date:   document.getElementById('modalDate').value.trim()||'—',
+    pct:    parseInt(document.getElementById('modalPct').value)||0,
+    priority: document.getElementById('modalPriority').value||'',
+    desc:   document.getElementById('modalDesc').value.trim()||'',
+    link:   document.getElementById('modalLink').value.trim()||'',
+    linkLabel: document.getElementById('modalLinkLabel').value.trim()||'',
+    timeVal:   document.getElementById('modalTimeVal').value||'',
+    timeUnit:  document.getElementById('modalTimeUnit').value||'heures',
+  });
+  closeModal();
+};
+document.getElementById('modalBackdrop').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+
+onValue(ref(db,'.info/connected'),snap=>{
+  const live=snap.val();
+  document.getElementById('syncDot').className='sync-dot'+(live?' live':'');
+  document.getElementById('syncLabel').textContent=live?'En direct':'Reconnexion…';
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+await seedData();
+listenMembers();
+if(myName){document.getElementById('myIdentity').value=myName;updateNotifBtn();}
+setTimeout(()=>{appReady=true;},2000);
+
+// ── Calendar ───────────────────────────────────────────────────────────────
+let currentView = 'list';
+let calDate = new Date();
+
+window.switchView = (v) => {
+  currentView = v;
+  document.getElementById('btnList').classList.toggle('active', v==='list');
+  document.getElementById('btnCal').classList.toggle('active', v==='cal');
+  document.getElementById('content').style.display = v==='list' ? 'block' : 'none';
+  document.getElementById('filters').style.display = v==='list' ? 'flex' : 'none';
+  document.getElementById('calWrap').style.display = v==='cal' ? 'block' : 'none';
+  if (v==='cal') renderCalendar();
+};
+
+window.calPrev = () => { calDate.setDate(calDate.getDate()-7); renderCalendar(); };
+window.calNext = () => { calDate.setDate(calDate.getDate()+7); renderCalendar(); };
+window.calToday= () => { calDate = new Date(); renderCalendar(); };
+
+// Parse dates like "mai 6", "févr. 20", "mai 15" → Date object (current year)
+const MONTHS = {
+  'jan':0,'janv':0,'fév':1,'févr':1,'mar':2,'mars':2,'avr':3,'mai':4,
+  'juin':5,'juil':6,'aoû':7,'août':7,'sep':8,'sept':8,'oct':9,'nov':10,'déc':11
+};
+function parseDate(str) {
+  if (!str || str==='—') return null;
+  const parts = str.trim().toLowerCase().replace('.','').split(' ');
+  if (parts.length < 2) return null;
+  const month = MONTHS[parts[0]];
+  const day = parseInt(parts[1]);
+  if (month === undefined || isNaN(day)) return null;
+  const year = new Date().getFullYear();
+  return new Date(year, month, day);
+}
+
+function getWeekStart(d) {
+  const date = new Date(d);
+  const day = date.getDay(); // 0=Sun
+  const diff = (day === 0) ? -6 : 1 - day; // Monday start
+  date.setDate(date.getDate() + diff);
+  date.setHours(0,0,0,0);
+  return date;
+}
+
+function sameDay(a, b) {
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+
+function formatWeekTitle(start) {
+  const end = new Date(start); end.setDate(end.getDate()+6);
+  const months = ['jan','fév','mars','avr','mai','juin','juil','août','sep','oct','nov','déc'];
+  const sm = months[start.getMonth()], em = months[end.getMonth()];
+  if (sm === em) return `${start.getDate()} – ${end.getDate()} ${sm} ${start.getFullYear()}`;
+  return `${start.getDate()} ${sm} – ${end.getDate()} ${em} ${start.getFullYear()}`;
+}
+
+function renderCalendar() {
+  const weekStart = getWeekStart(calDate);
+  document.getElementById('calTitle').textContent = formatWeekTitle(weekStart);
+
+  const days = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // Collect all projects
+  const allProjs = Object.values(ALL_PROJECTS).flat();
+
+  // Build events per day index (0-6)
+  const eventsByDay = Array.from({length:7}, ()=>[]);
+
+  allProjs.forEach(proj => {
+    const assignee = PEOPLE.find(p => p._key === proj._pid);
+    const color = assignee ? assignee.color : '#888';
+    const name = proj.name.length > 28 ? proj.name.slice(0,26)+'…' : proj.name;
+
+    // Deadline event
+    const dlDate = parseDate(proj.date);
+    if (dlDate) {
+      for (let i=0; i<7; i++) {
+        const d = new Date(weekStart); d.setDate(d.getDate()+i);
+        if (sameDay(d, dlDate)) {
+          eventsByDay[i].push({
+            name, color, type:'deadline',
+            label: '🏁 ' + name,
+            projKey: proj._key, pid: proj._pid, status: proj.status
+          });
+        }
+      }
+    }
+  });
+
+  const grid = document.getElementById('calGrid');
+  let html = days.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+
+  for (let i=0; i<7; i++) {
+    const d = new Date(weekStart); d.setDate(d.getDate()+i);
+    const isToday = sameDay(d, today);
+    const events = eventsByDay[i];
+    const statusColors = {'Fait':'#00C875','En cours':'#FDAB3D','Pas commencé':'#C4C4C4','Bloqué':'#E2445C'};
+
+    html += `<div class="cal-day${isToday?' today':''}">
+      <div class="cal-day-num">${d.getDate()}</div>`;
+
+    const shown = events.slice(0, 6);
+    shown.forEach(ev => {
+      const sc = statusColors[ev.status]||'#C4C4C4';
+      const bg = ev.color + '22';
+      html += `<div class="cal-event" style="background:${bg};border-left-color:${sc};color:var(--text)"
+        onclick="openProjectFromCal('${ev.projKey}')" title="${ev.name}">
+        ${ev.label}
+      </div>`;
+    });
+    if (events.length > 6) {
+      html += `<div class="cal-more">+${events.length-6} autres</div>`;
+    }
+
+    html += `</div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+window.openProjectFromCal = (projKey) => {
+  // Switch to list view and open the card
+  switchView('list');
+  setTimeout(() => {
+    const card = document.getElementById(`card-${projKey}`);
+    if (card) {
+      card.classList.add('open');
+      card.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  }, 100);
+};
+
+</script>
+</body>
+</html>
