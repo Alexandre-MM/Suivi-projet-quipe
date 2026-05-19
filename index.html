@@ -99,7 +99,7 @@
 
   .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
   .modal-backdrop.open { display: flex; }
-  .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 1.5rem; width: 100%; max-width: 420px; margin: 1rem; }
+  .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 1.5rem; width: 100%; max-width: 480px; margin: 1rem; max-height: 90vh; overflow-y: auto; }
   .modal h3 { font-size: 15px; font-weight: 600; margin-bottom: 1rem; }
   .modal label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 4px; margin-top: 12px; }
   .modal input, .modal select { width: 100%; padding: 8px 12px; font-size: 13px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
@@ -113,11 +113,29 @@
 
   .loading { text-align: center; padding: 3rem; color: var(--text3); font-size: 13px; }
 
+  .pct-editor { padding: 12px 16px 14px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  .pct-editor label { font-size: 12px; color: var(--text2); white-space: nowrap; }
+  .pct-editor input[type=range] { flex: 1; accent-color: var(--accent); cursor: pointer; }
+  .pct-editor .pct-val { font-size: 13px; font-weight: 600; color: var(--text); min-width: 36px; text-align: right; }
+
   @media (max-width: 600px) {
-    .content { padding: 1rem; }
-    .topbar, .tabs-wrap { padding: 0 1rem; }
+    .content { padding: 0.75rem; }
+    .topbar { padding: 0 0.75rem; }
+    .tabs-wrap { padding: 0 0.5rem; }
+    .tab { padding: 10px 10px; font-size: 12px; gap: 6px; }
+    .tab-avatar { width: 20px; height: 20px; font-size: 9px; }
+    .project-header { padding: 12px 12px; gap: 8px; }
     .project-name { font-size: 13px; }
-    .pct-bar { width: 44px; }
+    .project-date { display: none; }
+    .pct-bar { width: 36px; }
+    .msg-count { display: none; }
+    .status-badge { font-size: 10px; padding: 2px 7px; }
+    .msg-thread { padding: 10px 12px; }
+    .input-zone { padding: 8px 12px 12px; }
+    .author-row { padding: 8px 12px 0; }
+    .pct-editor { padding: 10px 12px 12px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .stat-value { font-size: 22px; }
   }
 </style>
 </head>
@@ -137,20 +155,59 @@
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
     <h3>Nouveau projet</h3>
-    <label>Nom du projet</label>
+
+    <label>Nom du projet *</label>
     <input type="text" id="modalName" placeholder="Ex: CANAL TOYS UK - Variations">
-    <label>Date limite</label>
-    <input type="text" id="modalDate" placeholder="Ex: mai 15">
-    <label>Statut</label>
-    <select id="modalStatus">
-      <option>Pas commencé</option>
-      <option>En cours</option>
-      <option>Fait</option>
-      <option>Bloqué</option>
-    </select>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+      <div>
+        <label style="margin-top:0">Date limite</label>
+        <input type="text" id="modalDate" placeholder="Ex: mai 15">
+      </div>
+      <div>
+        <label style="margin-top:0">Priorité</label>
+        <select id="modalPriority">
+          <option value="">— aucune —</option>
+          <option value="haute">🔴 Haute</option>
+          <option value="normale">🟡 Normale</option>
+          <option value="basse">🟢 Basse</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+      <div>
+        <label style="margin-top:0">Statut</label>
+        <select id="modalStatus">
+          <option>Pas commencé</option>
+          <option>En cours</option>
+          <option>Fait</option>
+          <option>Bloqué</option>
+        </select>
+      </div>
+      <div>
+        <label style="margin-top:0">Avancement</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <input type="range" id="modalPct" min="0" max="100" step="5" value="0" style="flex:1;accent-color:#E2445C"
+            oninput="document.getElementById('modalPctVal').textContent=this.value+'%'">
+          <span id="modalPctVal" style="font-size:12px;font-weight:600;min-width:32px">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <label>Description / contexte</label>
+    <textarea id="modalDesc" placeholder="Informations utiles, contexte client, instructions…" style="width:100%;padding:8px 12px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface);color:var(--text);resize:vertical;min-height:72px;font-family:inherit;outline:none;line-height:1.5"></textarea>
+
+    <label>Lien fichier / document</label>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="url" id="modalLink" placeholder="https://drive.google.com/…" style="flex:1">
+      <input type="text" id="modalLinkLabel" placeholder="Nom du lien" style="width:130px">
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin-top:4px">Google Drive, Dropbox, OneDrive, Notion…</p>
+
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Annuler</button>
-      <button class="btn-confirm" onclick="confirmAddProject()">Ajouter</button>
+      <button class="btn-confirm" onclick="confirmAddProject()">Ajouter le projet</button>
     </div>
   </div>
 </div>
@@ -334,6 +391,24 @@ function renderPersonView(pid, projects) {
           </div>
         </div>
         <div class="messages-panel">
+          ${proj.desc || proj.link || proj.priority ? `
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px">
+            ${proj.priority ? `<div style="display:flex;align-items:center;gap:8px;font-size:12px">
+              <span style="color:var(--text2)">Priorité :</span>
+              <span style="font-weight:500;color:var(--text)">${proj.priority==='haute'?'🔴 Haute':proj.priority==='normale'?'🟡 Normale':'🟢 Basse'}</span>
+            </div>` : ''}
+            ${proj.desc ? `<div style="font-size:13px;color:var(--text2);line-height:1.55">${proj.desc}</div>` : ''}
+            ${proj.link ? `<a href="${proj.link}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#579BFC;text-decoration:none;font-weight:500">
+              <i class="ti ti-external-link" style="font-size:14px"></i>${proj.linkLabel || 'Ouvrir le fichier'}
+            </a>` : ''}
+          </div>` : ''}
+          <div class="pct-editor">
+            <label>Avancement :</label>
+            <input type="range" min="0" max="100" step="5" value="${proj.pct||0}"
+              oninput="document.getElementById('pctval-${proj._key}').textContent=this.value+'%'"
+              onchange="changePct('${pid}','${proj._key}',this.value)">
+            <span class="pct-val" id="pctval-${proj._key}">${proj.pct||0}%</span>
+          </div>
           <div class="msg-thread" id="thread-${proj._key}"><div class="empty-thread">Chargement…</div></div>
           <div class="author-row">
             <label>Envoyer en tant que :</label>
@@ -422,6 +497,10 @@ window.handleKey = (e, pid, projKey) => {
   if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); window.sendMsg(pid, projKey); }
 };
 
+window.changePct = (pid, projKey, val) => {
+  update(ref(db, `projects/${pid}/${projKey}`), { pct: parseInt(val) });
+};
+
 window.changeStatus = (pid, projKey, newStatus) => {
   update(ref(db, `projects/${pid}/${projKey}`), { status: newStatus });
 };
@@ -434,14 +513,31 @@ window.switchTab = (pid) => {
   document.getElementById(`view-${pid}`).classList.add('active');
 };
 
-window.openModal = (pid) => { modalPid = pid; document.getElementById('modalBackdrop').classList.add('open'); document.getElementById('modalName').focus(); };
-window.closeModal = () => { document.getElementById('modalBackdrop').classList.remove('open'); document.getElementById('modalName').value=''; };
+window.openModal = (pid) => {
+  modalPid = pid;
+  document.getElementById('modalBackdrop').classList.add('open');
+  document.getElementById('modalName').focus();
+  document.getElementById('modalPct').value = 0;
+  document.getElementById('modalPctVal').textContent = '0%';
+  document.getElementById('modalDesc').value = '';
+  document.getElementById('modalLink').value = '';
+  document.getElementById('modalLinkLabel').value = '';
+};
+window.closeModal = () => {
+  document.getElementById('modalBackdrop').classList.remove('open');
+  document.getElementById('modalName').value = '';
+};
 window.confirmAddProject = () => {
   const name = document.getElementById('modalName').value.trim();
   if (!name || !modalPid) return;
-  const status = document.getElementById('modalStatus').value;
-  const date = document.getElementById('modalDate').value.trim() || '—';
-  push(ref(db, `projects/${modalPid}`), { name, status, date, pct: 0 });
+  const status   = document.getElementById('modalStatus').value;
+  const date     = document.getElementById('modalDate').value.trim() || '—';
+  const pct      = parseInt(document.getElementById('modalPct').value) || 0;
+  const priority = document.getElementById('modalPriority').value || '';
+  const desc     = document.getElementById('modalDesc').value.trim() || '';
+  const link     = document.getElementById('modalLink').value.trim() || '';
+  const linkLabel= document.getElementById('modalLinkLabel').value.trim() || '';
+  push(ref(db, `projects/${modalPid}`), { name, status, date, pct, priority, desc, link, linkLabel });
   closeModal();
 };
 
