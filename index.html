@@ -37,11 +37,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .chip-avatar{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff;flex-shrink:0}
 .filter-divider{width:1px;height:24px;background:var(--border2);flex-shrink:0;margin:0 2px}
 .content{max-width:860px;margin:0 auto;padding:1.25rem 1.5rem 3rem}
-.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:1.25rem}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px}
-.stat-label{font-size:11px;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
-.stat-value{font-size:26px;font-weight:600}
-.section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px;padding-left:2px}
+
+
 .project-list{display:flex;flex-direction:column;gap:8px}
 .project-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:border-color .15s}
 .project-card:hover,.project-card.open{border-color:var(--border2)}
@@ -149,6 +146,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   .cal-event{font-size:10px;padding:2px 4px}
   .cal-wrap{padding:.75rem}
 }
+
+/* TWO COLUMN LAYOUT */
+.board{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+.board-main{}
+.board-done{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;position:sticky;top:76px}
+.board-done-header{padding:14px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.board-done-title{font-size:13px;font-weight:600;color:var(--text)}
+.done-count{font-size:11px;background:#00C87522;color:#00C875;border-radius:20px;padding:2px 9px;font-weight:600}
+.done-list{display:flex;flex-direction:column;gap:1px;max-height:calc(100vh - 140px);overflow-y:auto}
+.done-item{padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.done-item:last-child{border-bottom:none}
+.done-item:hover{background:var(--surface2)}
+.done-check{width:18px;height:18px;border-radius:50%;background:#00C875;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.done-info{flex:1;min-width:0}
+.done-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.done-meta{font-size:11px;color:var(--text3);margin-top:2px;display:flex;align-items:center;gap:6px}
+.done-avatar{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:#fff;flex-shrink:0}
+.done-empty{padding:2rem;text-align:center;font-size:12px;color:var(--text3)}
+@media(max-width:800px){
+  .board{grid-template-columns:1fr}
+  .board-done{position:static}
+  .done-list{max-height:300px}
+}
 </style>
 </head>
 <body>
@@ -165,7 +185,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <div class="filters-wrap" id="filters"></div>
-<div class="content" id="content"></div>
+<div class="content" id="mainContent">
+  <div class="board">
+    <div class="board-main" id="content"></div>
+    <div class="board-done">
+      <div class="board-done-header">
+        <i class="ti ti-circle-check-filled" style="font-size:18px;color:#00C875"></i>
+        <span class="board-done-title">Terminés</span>
+        <span class="done-count" id="doneCount">0</span>
+      </div>
+      <div class="done-list" id="doneList">
+        <div class="done-empty">Aucun projet terminé</div>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="cal-wrap" id="calWrap" style="display:none">
   <div class="cal-legend">
     <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#E2445C"></div> Date limite</div>
@@ -438,6 +472,7 @@ function refreshAssigneeSelect(){
 window.openMembersModal=()=>{renderMembersList();document.getElementById('membersBackdrop').classList.add('open');};
 window.closeMembersModal=()=>document.getElementById('membersBackdrop').classList.remove('open');
 document.getElementById('membersBackdrop').addEventListener('click',e=>{if(e.target===e.currentTarget)closeMembersModal();});
+document.getElementById('doneModalBackdrop').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
 
 // ── Filters bar ────────────────────────────────────────────────────────────
 function renderFilters(){
@@ -469,38 +504,132 @@ function listenPersonProjects(pid){
   });
 }
 
+
+// ── Done list ──────────────────────────────────────────────────────────────
+function renderDoneList(doneProjs) {
+  const el = document.getElementById('doneList');
+  const countEl = document.getElementById('doneCount');
+  if (!el) return;
+  if (countEl) countEl.textContent = doneProjs.length;
+  if (!doneProjs.length) {
+    el.innerHTML = '<div class="done-empty">Aucun projet terminé</div>';
+    return;
+  }
+  el.innerHTML = doneProjs.map(proj => {
+    const assignee = PEOPLE.find(p => p._key === proj._pid);
+    return `<div class="done-item" onclick="openProjectFromDone('${proj._key}')">
+      <div class="done-check"><i class="ti ti-check" style="font-size:11px;color:#fff"></i></div>
+      <div class="done-info">
+        <div class="done-name" title="${proj.name}">${proj.name}</div>
+        <div class="done-meta">
+          ${assignee?`<div class="done-avatar" style="background:${assignee.color}">${assignee.initials}</div><span>${assignee.name}</span>`:''}
+          ${proj.date&&proj.date!=='—'?`<span>· ${proj.date}</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.openProjectFromDone = (projKey) => {
+  const proj = Object.values(ALL_PROJECTS).flat().find(p=>p._key===projKey);
+  if (!proj) return;
+  const assignee = PEOPLE.find(p=>p._key===proj._pid);
+  const s = STATUTS[proj.status]||STATUTS['Fait'];
+  const authors = ['Admin',...PEOPLE.map(p=>p.name)];
+  document.getElementById('doneModalTitle').textContent = proj.name;
+  document.getElementById('doneModalStatus').value = proj.status;
+  document.getElementById('doneModalStatus').dataset.pid = proj._pid;
+  document.getElementById('doneModalStatus').dataset.key = projKey;
+  document.getElementById('doneModalMeta').innerHTML = `
+    ${assignee?`<span style="display:flex;align-items:center;gap:6px"><div style="width:20px;height:20px;border-radius:50%;background:${assignee.color};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff">${assignee.initials}</div>${assignee.name}</span>`:''}
+    ${proj.date&&proj.date!=='—'?`<span style="color:var(--text3)">· ${proj.date}</span>`:''}
+    ${proj.timeVal?`<span style="color:var(--text3)">· ⏱ ${proj.timeVal} ${proj.timeUnit}</span>`:''}
+  `;
+  if(proj.priority){
+    document.getElementById('doneModalPriority').textContent = proj.priority==='haute'?'🔴 Haute':proj.priority==='normale'?'🟡 Normale':'🟢 Basse';
+    document.getElementById('doneModalPriority').style.display='inline';
+  } else {
+    document.getElementById('doneModalPriority').style.display='none';
+  }
+  if(proj.desc) { document.getElementById('doneModalDesc').textContent=proj.desc; document.getElementById('doneModalDesc').style.display='block'; }
+  else document.getElementById('doneModalDesc').style.display='none';
+  if(proj.link) { document.getElementById('doneModalLink').href=proj.link; document.getElementById('doneModalLink').textContent=proj.linkLabel||'Ouvrir le fichier'; document.getElementById('doneModalLink').style.display='inline-flex'; }
+  else document.getElementById('doneModalLink').style.display='none';
+
+  // Load messages
+  const thread = document.getElementById('doneModalThread');
+  thread.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--text3);padding:1rem">Chargement…</div>';
+  const authorSel = document.getElementById('doneModalAuthor');
+  authorSel.innerHTML = authors.map(a=>`<option>${a}</option>`).join('');
+  document.getElementById('doneModalSendBtn').onclick = () => {
+    const inp = document.getElementById('doneModalInput');
+    const author = authorSel.value||'Moi';
+    const text = inp.value.trim(); if(!text) return;
+    const now = new Date();
+    const time = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')} ${now.getHours()}h${now.getMinutes().toString().padStart(2,'0')}`;
+    push(ref(db,`messages/${projKey}`),{author,time,text});
+    inp.value=''; inp.style.height='auto';
+  };
+  document.getElementById('doneModalInput').onkeydown = (e) => {
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();document.getElementById('doneModalSendBtn').click();}
+  };
+  // Listen messages
+  onValue(ref(db,`messages/${projKey}`), snap => {
+    const msgs=[];
+    snap.forEach(c=>msgs.push(c.val()));
+    thread.innerHTML = msgs.length ? msgs.map(renderMsg).join('') : '<div style="text-align:center;font-size:12px;color:var(--text3);padding:1rem">Aucun message</div>';
+  });
+  document.getElementById('doneModalBackdrop').classList.add('open');
+};
+
+window.changeDoneStatus = () => {
+  const sel = document.getElementById('doneModalStatus');
+  const pid = sel.dataset.pid, key = sel.dataset.key, val = sel.value;
+  update(ref(db,`projects/${pid}/${key}`),{status:val});
+  if(val!=='Fait') { document.getElementById('doneModalBackdrop').classList.remove('open'); toast('Statut mis à jour !'); }
+};
+
 // ── Render projects ────────────────────────────────────────────────────────
 function renderProjects(){
   const projs=activeFilter==='all'?Object.values(ALL_PROJECTS).flat():(ALL_PROJECTS[activeFilter]||[]);
-  const fait=projs.filter(p=>p.status==='Fait').length;
-  const enC=projs.filter(p=>p.status==='En cours').length;
-  const blq=projs.filter(p=>p.status==='Bloqué').length;
   const supports=PEOPLE.filter(isSupport);
 
-  let html=`<div class="stats-row">
-    <div class="stat-card"><div class="stat-label">Projets</div><div class="stat-value">${projs.length}</div></div>
-    <div class="stat-card"><div class="stat-label">Fait</div><div class="stat-value" style="color:#00C875">${fait}</div></div>
-    <div class="stat-card"><div class="stat-label">En cours</div><div class="stat-value" style="color:#FDAB3D">${enC}</div></div>
-    <div class="stat-card"><div class="stat-label">Bloqué</div><div class="stat-value" style="color:#E2445C">${blq}</div></div>
-  </div><div class="section-title">Projets</div><div class="project-list">`;
+  let html=`<div class="project-list">`;
 
-  if(!projs.length){
-    html+='<div class="empty-state"><i class="ti ti-inbox" style="font-size:36px;display:block;margin-bottom:12px;opacity:.35"></i>Aucun projet</div>';
+  // Split done vs active
+  const doneProjs = projs.filter(p=>p.status==='Fait');
+  const activeProjs = projs.filter(p=>p.status!=='Fait');
+  renderDoneList(doneProjs);
+
+  if(!activeProjs.length){
+    html+='<div class="empty-state"><i class="ti ti-inbox" style="font-size:36px;display:block;margin-bottom:12px;opacity:.35"></i>Aucun projet en cours</div>';
   } else {
+    const projs = activeProjs; // shadow for sorting below
     // Sort by deadline date, no date goes to end
-    const MONTHS_SORT={jan:0,janv:0,'fév':1,févr:1,mar:2,mars:2,avr:3,mai:4,juin:5,juil:6,'aoû':7,août:7,sep:8,sept:8,oct:9,nov:10,'déc':11};
+    const MONTHS_SORT={'jan':0,'janv':0,'janvier':0,'fév':1,'fevr':1,'févr':1,'février':1,'mar':2,'mars':2,'avr':3,'avril':3,'mai':4,'juin':5,'jun':5,'juil':6,'juillet':6,'jul':6,'aoû':7,'aout':7,'août':7,'sep':8,'sept':8,'septembre':8,'oct':9,'octobre':9,'nov':10,'novembre':10,'déc':11,'dec':11,'décembre':11};
     function parseDateSort(str){
-      if(!str||str==='—') return null;
-      const parts=str.trim().toLowerCase().replace('.','').split(' ');
+      if(!str||str==='—'||!str.trim()) return null;
+      // Remove dots, normalize spaces, lowercase
+      const clean=str.trim().toLowerCase().replace(/\./g,'').replace(/\s+/g,' ');
+      const parts=clean.split(' ');
       if(parts.length<2) return null;
-      const m=MONTHS_SORT[parts[0]], d=parseInt(parts[1]);
-      if(m===undefined||isNaN(d)) return null;
-      return new Date(new Date().getFullYear(),m,d);
+      // Try month first, then day
+      let monthKey=parts[0], day=parseInt(parts[1]);
+      // Also try reversed order (day month)
+      if(isNaN(day)||MONTHS_SORT[monthKey]===undefined){
+        monthKey=parts[1]; day=parseInt(parts[0]);
+      }
+      const m=MONTHS_SORT[monthKey];
+      if(m===undefined||isNaN(day)) return null;
+      const year=new Date().getFullYear();
+      // If the date is in the past by more than 6 months, use next year
+      const date=new Date(year,m,day);
+      return date;
     }
     const sorted=[...projs].sort((a,b)=>{
       const da=parseDateSort(a.date), db=parseDateSort(b.date);
       if(!da&&!db) return 0; if(!da) return 1; if(!db) return -1;
-      return da-db;
+      return da.getTime()-db.getTime();
     });
     // Group by month
     const MONTH_LABELS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -678,7 +807,7 @@ window.switchView = (v) => {
   currentView = v;
   document.getElementById('btnList').classList.toggle('active', v==='list');
   document.getElementById('btnCal').classList.toggle('active', v==='cal');
-  document.getElementById('content').style.display = v==='list' ? 'block' : 'none';
+  document.getElementById('mainContent').style.display = v==='list' ? 'block' : 'none';
   document.getElementById('filters').style.display = v==='list' ? 'flex' : 'none';
   document.getElementById('calWrap').style.display = v==='cal' ? 'block' : 'none';
   if (v==='cal') renderCalendar();
@@ -690,18 +819,29 @@ window.calToday= () => { calDate = new Date(); renderCalendar(); };
 
 // Parse dates like "mai 6", "févr. 20", "mai 15" → Date object (current year)
 const MONTHS = {
-  'jan':0,'janv':0,'fév':1,'févr':1,'mar':2,'mars':2,'avr':3,'mai':4,
-  'juin':5,'juil':6,'aoû':7,'août':7,'sep':8,'sept':8,'oct':9,'nov':10,'déc':11
+  'jan':0,'janv':0,'janvier':0,
+  'fév':1,'fevr':1,'févr':1,'février':1,
+  'mar':2,'mars':2,
+  'avr':3,'avril':3,
+  'mai':4,
+  'juin':5,'jun':5,
+  'juil':6,'juillet':6,'jul':6,
+  'aoû':7,'aout':7,'août':7,
+  'sep':8,'sept':8,'septembre':8,
+  'oct':9,'octobre':9,
+  'nov':10,'novembre':10,
+  'déc':11,'dec':11,'décembre':11
 };
 function parseDate(str) {
-  if (!str || str==='—') return null;
-  const parts = str.trim().toLowerCase().replace('.','').split(' ');
+  if (!str || str==='—'||!str.trim()) return null;
+  const clean=str.trim().toLowerCase().replace(/\./g,'').replace(/\s+/g,' ');
+  const parts=clean.split(' ');
   if (parts.length < 2) return null;
-  const month = MONTHS[parts[0]];
-  const day = parseInt(parts[1]);
+  let monthKey=parts[0], day=parseInt(parts[1]);
+  if(isNaN(day)||MONTHS[monthKey]===undefined){ monthKey=parts[1]; day=parseInt(parts[0]); }
+  const month = MONTHS[monthKey];
   if (month === undefined || isNaN(day)) return null;
-  const year = new Date().getFullYear();
-  return new Date(year, month, day);
+  return new Date(new Date().getFullYear(), month, day);
 }
 
 function getWeekStart(d) {
@@ -803,5 +943,38 @@ window.openProjectFromCal = (projKey) => {
 };
 
 </script>
+<!-- Done project modal -->
+<div class="modal-backdrop" id="doneModalBackdrop">
+  <div class="modal" style="max-width:520px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">
+      <h3 id="doneModalTitle" style="font-size:14px;line-height:1.4;flex:1"></h3>
+      <button onclick="document.getElementById('doneModalBackdrop').classList.remove('open')" style="background:none;border:none;cursor:pointer;color:var(--text3);flex-shrink:0;padding:2px"><i class="ti ti-x" style="font-size:18px"></i></button>
+    </div>
+    <div id="doneModalMeta" style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text2);flex-wrap:wrap;margin-bottom:10px"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <label style="font-size:12px;color:var(--text2);margin:0">Statut :</label>
+      <select id="doneModalStatus" onchange="changeDoneStatus()" style="font-size:12px;padding:4px 10px;border:1px solid var(--border2);border-radius:20px;background:var(--surface);color:var(--text);cursor:pointer;outline:none;font-family:inherit">
+        <option>Pas commencé</option><option>En cours</option><option selected>Fait</option><option>Bloqué</option>
+      </select>
+      <span id="doneModalPriority" style="font-size:11px;padding:2px 8px;background:var(--surface2);border-radius:20px;display:none"></span>
+    </div>
+    <div id="doneModalDesc" style="font-size:13px;color:var(--text2);line-height:1.55;padding:10px 12px;background:var(--surface2);border-radius:var(--radius);margin-bottom:10px;display:none"></div>
+    <a id="doneModalLink" href="#" target="_blank" rel="noopener" style="display:none;align-items:center;gap:6px;font-size:12px;color:#579BFC;font-weight:500;text-decoration:none;margin-bottom:10px"><i class="ti ti-external-link" style="font-size:14px"></i></a>
+    <div style="border-top:1px solid var(--border);margin:0 -1.5rem;padding:12px 1.5rem 0">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Messages</div>
+      <div id="doneModalThread" style="display:flex;flex-direction:column;gap:10px;max-height:240px;overflow-y:auto;margin-bottom:10px"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <label style="font-size:12px;color:var(--text2);margin:0">En tant que :</label>
+        <select id="doneModalAuthor" style="font-size:12px;padding:3px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;outline:none"></select>
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <textarea id="doneModalInput" placeholder="Écrire… @Prénom pour mentionner (Entrée pour envoyer)" style="flex:1;min-height:38px;max-height:100px;padding:9px 12px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface);color:var(--text);resize:none;font-family:inherit;line-height:1.5;outline:none"
+          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+        <button id="doneModalSendBtn" class="send-btn"><i class="ti ti-send" style="font-size:17px"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
